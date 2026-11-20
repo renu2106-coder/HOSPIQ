@@ -1,0 +1,6 @@
+patient_id,vital_bp,vital_pulse,vital_temp,vital_resp_rate,vital_spo2,nurse_notes,recorded_at,nurse_name
+P001,138/84 mmHg,76,98.4,16,98,"Patient calm, compliant with oral antidiabetic therapy. Mild headache reported.",2024-03-10 09:30,"Clara Barton, RN"
+P002,118/74 mmHg,82,98.6,18,99,Mild expiratory wheeze heard on forced exhalation. Inhaler technique reviewed.,2024-02-14 11:15,"Clara Barton, RN"
+P003,144/88 mmHg,70,98.1,15,97,BP slightly elevated above baseline. Advised low sodium intake.,2024-01-20 14:00,"Clara Barton, RN"
+P004,120/78 mmHg,74,98.2,16,99,Routine vitals normal. No complaints of dizziness.,2024-04-05 10:20,"Sarah Connor, RN"
+P005,152/92 mmHg,68,98.0,17,96,Mild pedal edema noted (1+ pitting). Physician informed.,2024-03-18 08:45,"Clara Barton, RN"

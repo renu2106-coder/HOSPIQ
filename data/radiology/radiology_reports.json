@@ -1,0 +1,47 @@
+[
+  {
+    "patient_id": "P001",
+    "imaging_type": "Chest X-Ray (PA View)",
+    "body_part": "Chest",
+    "report_findings": "Cardiothoracic ratio normal at 48%. Normal vascularity. Clear lung fields bilaterally without focal consolidation, pneumothorax, or pleural effusion. Osseous thoracic cage intact.",
+    "impression": "No acute cardiopulmonary disease.",
+    "report_date": "2024-01-16",
+    "radiologist_name": "Dr. Elena Rostova"
+  },
+  {
+    "patient_id": "P002",
+    "imaging_type": "Chest X-Ray (PA View)",
+    "body_part": "Chest",
+    "report_findings": "Mild bronchial wall thickening consistent with reactive airway disease / mild asthma. No parenchymal infiltrates or pulmonary edema.",
+    "impression": "Reactive airway changes without consolidation.",
+    "report_date": "2024-02-14",
+    "radiologist_name": "Dr. Elena Rostova"
+  },
+  {
+    "patient_id": "P003",
+    "imaging_type": "Echocardiogram (Transthoracic)",
+    "body_part": "Heart",
+    "report_findings": "Left ventricular ejection fraction preserved at 58%. Mild concentric left ventricular hypertrophy. Grade 1 diastolic dysfunction.",
+    "impression": "Hypertensive heart remodeling with preserved systolic function.",
+    "report_date": "2024-01-22",
+    "radiologist_name": "Dr. Elena Rostova"
+  },
+  {
+    "patient_id": "P005",
+    "imaging_type": "Renal Ultrasound",
+    "body_part": "Kidneys",
+    "report_findings": "Right kidney measures 9.8 cm, left measures 10.1 cm. Increased bilateral cortical echogenicity consistent with medical renal disease. No hydronephrosis or renal calculi.",
+    "impression": "Bilateral renal parenchymal disease consistent with clinical CKD.",
+    "report_date": "2024-03-19",
+    "radiologist_name": "Dr. Elena Rostova"
+  },
+  {
+    "patient_id": "P007",
+    "imaging_type": "X-Ray Right Knee",
+    "body_part": "Right Knee",
+    "report_findings": "Moderate joint space narrowing of the medial compartment. Marginal osteophyte formation along the tibial plateau. No acute fracture or dislocation.",
+    "impression": "Moderate tricompartmental osteoarthritis, predominant medially.",
+    "report_date": "2024-02-28",
+    "radiologist_name": "Dr. Elena Rostova"
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "patient_id": "P001",
+    "bill_id": "INV-2024-00101",
+    "service": "Inpatient 3-Day Medical Stay & Nursing Care",
+    "amount": 1450.0,
+    "payment_status": "Insured",
+    "billing_date": "2024-01-17"
+  },
+  {
+    "patient_id": "P001",
+    "bill_id": "INV-2024-00102",
+    "service": "Comprehensive Metabolic Panel & HbA1c",
+    "amount": 185.0,
+    "payment_status": "Paid",
+    "billing_date": "2024-03-10"
+  },
+  {
+    "patient_id": "P002",
+    "bill_id": "INV-2024-00201",
+    "service": "Specialist Consultation & Spirometry",
+    "amount": 220.0,
+    "payment_status": "Paid",
+    "billing_date": "2024-02-14"
+  },
+  {
+    "patient_id": "P003",
+    "bill_id": "INV-2024-00301",
+    "service": "Transthoracic Echocardiogram & ECG",
+    "amount": 450.0,
+    "payment_status": "Paid",
+    "billing_date": "2024-01-22"
+  },
+  {
+    "patient_id": "P004",
+    "bill_id": "INV-2024-00401",
+    "service": "Neurological Consultation & Lab Evaluation",
+    "amount": 275.0,
+    "payment_status": "Pending",
+    "billing_date": "2024-04-05"
+  },
+  {
+    "patient_id": "P005",
+    "bill_id": "INV-2024-00501",
+    "service": "Renal Ultrasound & Emergency Admission Co-pay",
+    "amount": 890.0,
+    "payment_status": "Pending",
+    "billing_date": "2024-03-21"
+  }
+]

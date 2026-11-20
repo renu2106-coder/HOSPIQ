@@ -1,0 +1,24 @@
+[
+  {
+    "patient_id": "P001",
+    "admission_date": "2024-01-14",
+    "discharge_date": "2024-01-17",
+    "ward": "Medical Ward 3",
+    "bed_number": "304-B",
+    "admission_diagnosis": "Uncontrolled Type 2 Diabetes with symptomatic hyperglycemia",
+    "discharge_diagnosis": "Type 2 Diabetes mellitus, stabilized on Metformin; Essential Hypertension",
+    "attending_physician": "Dr. Sarah Smith",
+    "discharge_status": "Recovered / Discharged Home"
+  },
+  {
+    "patient_id": "P005",
+    "admission_date": "2024-03-17",
+    "discharge_date": "2024-03-21",
+    "ward": "Renal Ward 2",
+    "bed_number": "212-A",
+    "admission_diagnosis": "Hypertensive urgency with Stage 3 Chronic Kidney Disease exacerbation",
+    "discharge_diagnosis": "Hypertensive nephropathy, stabilized volume status",
+    "attending_physician": "Dr. Alice Wong",
+    "discharge_status": "Transferred to Outpatient Nephrology Follow-up"
+  }
+]

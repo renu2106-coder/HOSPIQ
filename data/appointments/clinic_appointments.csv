@@ -1,0 +1,7 @@
+patient_id,appointment_date,appointment_time,department,doctor,reason_for_visit,appointment_status
+P001,2024-01-14,09:00 AM,Internal Medicine,Dr. Sarah Smith,High morning fasting sugar readings and fatigue,Completed
+P001,2024-04-15,10:30 AM,Internal Medicine,Dr. Sarah Smith,Quarterly diabetic check-up & HbA1c review,Scheduled
+P002,2024-02-14,11:00 AM,Pulmonology,Dr. John Adams,Cold weather asthma exacerbation,Completed
+P003,2024-01-20,02:00 PM,Cardiology,Dr. Robert Vance,Routine hypertension & ECG follow-up,Completed
+P004,2024-04-05,03:30 PM,Neurology,Dr. Sarah Smith,Persistent unilateral tension headache,Completed
+P005,2024-03-17,08:30 AM,Nephrology,Dr. Alice Wong,Renal function lab review & blood pressure check,Completed

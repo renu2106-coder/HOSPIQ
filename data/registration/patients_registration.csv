@@ -1,0 +1,18 @@
+patient_id,name,dob,gender,contact_number,address,registration_date,blood_group
+P001,Johnathan Miller,1980-05-14,Male,+1-555-0101,"742 Evergreen Terrace, Springfield",2023-01-15,O+
+P002,Sarah Jenkins,1992-11-23,Female,+1-555-0202,"1204 Elm Street, Riverdale",2023-02-10,A+
+P003,Michael Chang,1975-08-30,Male,+1-555-0303,"88 Lotus Boulevard, Metro City",2023-03-05,B+
+P004,Emily Rodriguez,1988-04-12,Female,+1-555-0404,"45 Ocean View Road, Baytown",2023-04-18,AB+
+P005,David Thompson,1965-12-03,Male,+1-555-0505,"300 Pine Grove, Oak Ridge",2023-05-22,O-
+P006,Amanda White,1995-07-19,Female,+1-555-0606,"55 Maple Avenue, Cedar Falls",2023-06-11,A-
+P007,Robert Lewis,1958-03-27,Male,+1-555-0707,"910 Birch Lane, High Point",2023-07-04,O+
+P008,Lisa Patel,1983-09-15,Female,+1-555-0808,"12 Willow Creek, Brookside",2023-08-19,B-
+P009,James Wilson,1972-01-08,Male,+1-555-0909,"77 Sunset Drive, Hillcrest",2023-09-14,AB-
+P010,Maria Garcia,1990-10-25,Female,+1-555-1010,"104 Meadow View, Sunnydale",2023-10-02,O+
+P011,Brian O'Connor,1984-06-18,Male,+1-555-1111,"402 Chestnut Court, Highland",2023-11-12,A+
+P012,Jessica Taylor,1999-02-14,Female,+1-555-1212,"610 University Way, College Park",2023-12-01,B+
+P013,Daniel Martinez,1968-11-11,Male,+1-555-1313,"815 Cedar Ridge, Greenfield",2024-01-10,O+
+P014,Rachel Adams,1993-05-29,Female,+1-555-1414,"220 Lakeview Drive, Lakeside",2024-02-15,A-
+P015,Christopher Hall,1978-07-07,Male,+1-555-1515,"33 Heritage Circle, Old Town",2024-03-20,AB+
+P002,Sarah Jenkins,23/11/1992,Female,+1-555-0202,"1204 Elm Street, Apt 3B, Riverdale",10/02/2023,A+
+P003,Michael Chang,1975-09-02,Male,+1-555-0303,"88 Lotus Boulevard, Metro City",2023-03-05,B+
