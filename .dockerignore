@@ -1,0 +1,6 @@
+**/__pycache__
+**/*.pyc
+frontend/node_modules
+.git
+.pytest_cache
+backend/database/hospiq.db*
