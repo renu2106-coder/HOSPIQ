@@ -23,7 +23,6 @@ from backend.api.agents import router as agents_router
 from backend.api.audit import router as audit_router
 from backend.api.dashboard import router as dashboard_router
 from backend.api.tools_api import router as tools_router
-from backend.api.test_cases import router as test_cases_router
 
 app = FastAPI(
     title="HOSPIQ API",
@@ -56,7 +55,6 @@ app.include_router(agents_router)
 app.include_router(audit_router)
 app.include_router(dashboard_router)
 app.include_router(tools_router)
-app.include_router(test_cases_router)
 
 @app.on_event("startup")
 def on_startup():

@@ -4,8 +4,6 @@ import { api } from './services/api';
 import { Navbar } from './components/Navbar';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { PersonalizedTutorialModal } from './components/PersonalizedTutorialModal';
-import { TestCasesModal } from './components/TestCasesModal';
-import { VivaDefenseModal } from './components/VivaDefenseModal';
 import { AgenticHubPage } from './pages/AgenticHubPage';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -23,8 +21,6 @@ export function App() {
   const [llmStatus, setLlmStatus] = useState<LLMStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [showTestCases, setShowTestCases] = useState(false);
-  const [showVivaGuide, setShowVivaGuide] = useState(false);
 
   // Initialize session from token
   useEffect(() => {
@@ -90,8 +86,6 @@ export function App() {
       setUser(null);
       setCurrentTab('dashboard');
       setShowTutorial(false);
-      setShowTestCases(false);
-      setShowVivaGuide(false);
     }
   };
 
@@ -140,8 +134,6 @@ export function App() {
         user={user}
         onLogout={handleLogout}
         onOpenTutorial={() => setShowTutorial(true)}
-        onOpenTestCases={() => setShowTestCases(true)}
-        onOpenVivaGuide={() => setShowVivaGuide(true)}
       />
 
       {/* Main Body with Sidebar + Tab Workspace */}
@@ -198,18 +190,6 @@ export function App() {
         user={user}
         isOpen={showTutorial}
         onClose={() => setShowTutorial(false)}
-      />
-
-      {/* Specification Test Suite Modal (Section 19, Page 16) */}
-      <TestCasesModal
-        isOpen={showTestCases}
-        onClose={() => setShowTestCases(false)}
-      />
-
-      {/* MSc Viva Defense Guide Modal (Section 25, Page 22-23) */}
-      <VivaDefenseModal
-        isOpen={showVivaGuide}
-        onClose={() => setShowVivaGuide(false)}
       />
     </div>
   );

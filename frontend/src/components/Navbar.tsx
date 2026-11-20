@@ -1,21 +1,17 @@
 import React from 'react';
 import { User } from '../types';
-import { LogOut, User as UserIcon, Shield, HelpCircle, FlaskConical, GraduationCap } from 'lucide-react';
+import { LogOut, HelpCircle } from 'lucide-react';
 
 interface NavbarProps {
   user: User;
   onLogout: () => void;
   onOpenTutorial?: () => void;
-  onOpenTestCases?: () => void;
-  onOpenVivaGuide?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   user,
   onLogout,
   onOpenTutorial,
-  onOpenTestCases,
-  onOpenVivaGuide
 }) => {
   return (
     <header style={{
@@ -53,58 +49,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {/* Spec Test Suite Button (Section 19, Page 16) */}
-        {onOpenTestCases && (
-          <button
-            onClick={onOpenTestCases}
-            type="button"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 11px',
-              borderRadius: '8px',
-              backgroundColor: '#EFF6FF',
-              border: '1px solid #BFDBFE',
-              color: '#2563EB',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            title="Evaluate the 6 Official Test Cases (Section 19, Page 16)"
-          >
-            <FlaskConical size={14} />
-            <span>Spec Tests (6)</span>
-          </button>
-        )}
-
-        {/* MSc Viva Defense Guide Button (Section 25, Page 22) */}
-        {onOpenVivaGuide && (
-          <button
-            onClick={onOpenVivaGuide}
-            type="button"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 11px',
-              borderRadius: '8px',
-              backgroundColor: '#ECFDF5',
-              border: '1px solid #A7F3D0',
-              color: '#059669',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            title="MSc Viva Defense Guide & Questions (Section 25, Page 22-23)"
-          >
-            <GraduationCap size={14} />
-            <span>Viva Guide</span>
-          </button>
-        )}
-
         {/* Tutorial / Role Guide Button */}
         {onOpenTutorial && (
           <button
@@ -130,23 +74,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Tutorial</span>
           </button>
         )}
-
-        {/* 2FA Security Pill */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '5px',
-          padding: '5px 9px',
-          borderRadius: '20px',
-          backgroundColor: '#F8FAFC',
-          border: '1px solid #E2E8F0',
-          color: '#059669',
-          fontSize: '11px',
-          fontWeight: 700
-        }}>
-          <Shield size={12} />
-          <span>2FA OK</span>
-        </div>
 
         {/* User Pill */}
         <div style={{

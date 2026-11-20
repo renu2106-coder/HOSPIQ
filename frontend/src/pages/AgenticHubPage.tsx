@@ -3,8 +3,7 @@ import { api } from '../services/api';
 import type { Patient, ClinicalDocument, ValidationResult } from '../types';
 import {
   Play, CheckCircle2, AlertTriangle, XCircle, FileText,
-  Clock, ShieldCheck, Check, Edit3, X, Globe, Share2, Download,
-  Mic, MicOff, Volume2, Sparkles
+  Clock, ShieldCheck, Check, Edit3, X, Globe, Share2, Download
 } from 'lucide-react';
 
 interface AgenticHubPageProps {
@@ -25,86 +24,6 @@ export const AgenticHubPage: React.FC<AgenticHubPageProps> = ({ currentRole }) =
   const [reviewStatus, setReviewStatus] = useState<string>('REVIEW REQUIRED');
   const [fhirData, setFhirData] = useState<any | null>(null);
   const [showFhirModal, setShowFhirModal] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
-  const [showVoiceModal, setShowVoiceModal] = useState(false);
-  const [simulatedVoiceText, setSimulatedVoiceText] = useState('Prepare the discharge summary for patient P001');
-
-  const handleVoiceCommand = (text: string) => {
-    const clean = text.toLowerCase().trim();
-    setVoiceNotice(`🎤 Voice Command Recognized: "${text}" (Challenge D)`);
-
-    // Match patient ID (e.g. P001 - P015) or name
-    const patMatch = clean.match(/p\d{1,3}/i);
-    if (patMatch) {
-      let foundId = patMatch[0].toUpperCase();
-      if (foundId.length === 2) foundId = `P00${foundId[1]}`;
-      else if (foundId.length === 3) foundId = `P0${foundId.slice(1)}`;
-      const validPat = patients.find(p => p.id === foundId);
-      if (validPat) setSelectedPatientId(validPat.id);
-    } else if (clean.includes('ravi') || clean.includes('kumar')) {
-      setSelectedPatientId('P001');
-    }
-
-    // Match task
-    if (clean.includes('discharge')) {
-      setSelectedTask('Prepare Discharge Summary');
-    } else if (clean.includes('clinical') || clean.includes('encounter')) {
-      setSelectedTask('Prepare Clinical / Encounter Summary');
-    } else if (clean.includes('education')) {
-      setSelectedTask('Generate Patient Education Summary');
-    } else if (clean.includes('medication') || clean.includes('drug')) {
-      setSelectedTask('Generate Medication Explanation');
-    } else if (clean.includes('timeline')) {
-      setSelectedTask('Generate Patient Timeline');
-    }
-
-    // Match multilingual options (Challenge B)
-    if (clean.includes('telugu')) setLanguage('Telugu');
-    else if (clean.includes('hindi')) setLanguage('Hindi');
-    else if (clean.includes('tamil')) setLanguage('Tamil');
-    else if (clean.includes('kannada')) setLanguage('Kannada');
-  };
-
-  const startListening = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setShowVoiceModal(true);
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-
-      recognition.onstart = () => {
-        setIsListening(true);
-        setVoiceNotice('Listening to speech... (e.g. "Prepare the discharge summary for patient P001")');
-      };
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        handleVoiceCommand(transcript);
-        setIsListening(false);
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-        setShowVoiceModal(true);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.start();
-    } catch {
-      setIsListening(false);
-      setShowVoiceModal(true);
-    }
-  };
 
   const isDoctor = currentRole === 'Doctor';
   const isParamedic = currentRole === 'Paramedic';
@@ -281,26 +200,6 @@ export const AgenticHubPage: React.FC<AgenticHubPageProps> = ({ currentRole }) =
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
-            onClick={startListening}
-            className="hospiq-btn-outline"
-            style={{
-              borderColor: isListening ? '#EF4444' : '#38BDF8',
-              backgroundColor: isListening ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.1)',
-              color: isListening ? '#EF4444' : '#38BDF8',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '12.5px',
-              fontWeight: 700,
-              transition: 'all 0.2s'
-            }}
-            title="Speech Command Input (Challenge D)"
-          >
-            {isListening ? <MicOff size={15} className="spin" /> : <Mic size={15} />}
-            <span>{isListening ? 'Listening...' : 'Voice Command (Challenge D)'}</span>
-          </button>
-
-          <button
             onClick={handleExportFhir}
             className="hospiq-btn-outline"
             style={{
@@ -317,31 +216,6 @@ export const AgenticHubPage: React.FC<AgenticHubPageProps> = ({ currentRole }) =
           </button>
         </div>
       </div>
-
-      {/* Voice Recognition Feedback Banner (Challenge D) */}
-      {voiceNotice && (
-        <div style={{
-          padding: '12px 18px',
-          borderRadius: '10px',
-          backgroundColor: isListening ? '#FEF2F2' : '#EFF6FF',
-          border: `1px solid ${isListening ? '#FECACA' : '#BAE6FD'}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          animation: 'fadeIn 0.2s ease-out'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: isListening ? '#DC2626' : '#0369A1', fontWeight: 600 }}>
-            {isListening ? <Mic size={18} className="spin" /> : <Volume2 size={18} />}
-            <span>{voiceNotice}</span>
-          </div>
-          <button
-            onClick={() => setVoiceNotice(null)}
-            style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: '2px 6px' }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Main Agent Workflow Card (Mirrors Page 20) */}
       <div className="hospiq-card" style={{ padding: '24px' }}>
@@ -828,111 +702,6 @@ export const AgenticHubPage: React.FC<AgenticHubPageProps> = ({ currentRole }) =
             </pre>
             <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowFhirModal(false)} className="hospiq-btn">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Voice Command Dialog & Simulation (Challenge D, Page 22) */}
-      {showVoiceModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.7)',
-          backdropFilter: 'blur(3px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '20px'
-        }}>
-          <div className="card" style={{ maxWidth: '520px', width: '100%', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '36px', height: '36px', borderRadius: '50%',
-                  backgroundColor: '#EFF6FF', color: '#0284C7',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <Mic size={20} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
-                    Challenge D — Speech &amp; Voice Commands
-                  </h3>
-                  <div style={{ fontSize: '11.5px', color: '#64748B' }}>
-                    Reference Document Page 22 • Natural Voice Clinical Request
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowVoiceModal(false)}
-                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', fontSize: '18px' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5, marginBottom: '16px' }}>
-              Speak or choose a natural language clinical speech request to command the Documentation Agent:
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
-              {[
-                'Prepare the discharge summary for patient P001',
-                'Prepare clinical summary for patient P002',
-                'Generate patient education summary for patient P001 in Hindi',
-                'Generate medication explanation for patient P003',
-                'Prepare patient timeline for patient P001'
-              ].map((phrase, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    handleVoiceCommand(phrase);
-                    setShowVoiceModal(false);
-                  }}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #E2E8F0',
-                    backgroundColor: '#F8FAFC',
-                    color: '#0F172A',
-                    fontSize: '12.5px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <span style={{ fontFamily: 'monospace' }}>"{phrase}"</span>
-                  <span style={{ fontSize: '11px', color: '#0284C7', fontWeight: 700 }}>Select →</span>
-                </button>
-              ))}
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <input
-                type="text"
-                placeholder="Or type voice utterance..."
-                value={simulatedVoiceText}
-                onChange={(e) => setSimulatedVoiceText(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '9px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  fontSize: '13px'
-                }}
-              />
-              <button
-                onClick={() => {
-                  handleVoiceCommand(simulatedVoiceText);
-                  setShowVoiceModal(false);
-                }}
-                className="btn-primary"
-                style={{ padding: '8px 16px', fontSize: '13px' }}
-              >
-                Execute
-              </button>
             </div>
           </div>
         </div>

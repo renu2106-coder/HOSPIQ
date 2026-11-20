@@ -212,19 +212,5 @@ export const api = {
         body: JSON.stringify(args),
       }),
   },
-
-  testCases: {
-    runAll: () => request<Array<{
-      test_case_id: number;
-      title: string;
-      page_reference: string;
-      description: string;
-      patient_id: string;
-      input_summary: string;
-      result_status: string;
-      details: any;
-    }>>('/test-cases/all'),
-    runSingle: (id: number) => request<any>(`/test-cases/${id}`),
-  },
 };
 
