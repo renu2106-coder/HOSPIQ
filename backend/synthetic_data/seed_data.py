@@ -178,8 +178,8 @@ DEMO_USERS = [
     {
         "username": "patient.john",
         "password": "PatientPass123!",
-        "full_name": "Ravi Kumar",
-        "email": "ravi.kumar@example.com",
+        "full_name": "Johnathan Miller",
+        "email": "patient.john@hospiq.local",
         "role": "Patient",
         "department": None,
         "patient_id": "P001"
@@ -354,21 +354,27 @@ def seed_database(db: Session):
 
     # 1. Seed Demo Users if not present
     for u in DEMO_USERS:
-        existing = db.query(User).filter(User.username == u["username"]).first()
+        existing = db.query(User).filter(
+            (User.username == u["username"]) | (User.email == u["email"])
+        ).first()
         if not existing:
-            user = User(
-                username=u["username"],
-                hashed_password=hash_password(u["password"]),
-                full_name=u["full_name"],
-                email=u["email"],
-                role=u["role"],
-                department=u["department"],
-                patient_id=u["patient_id"],
-                is_active=True,
-                created_at=datetime.utcnow()
-            )
-            db.add(user)
-    db.commit()
+            try:
+                user = User(
+                    username=u["username"],
+                    hashed_password=hash_password(u["password"]),
+                    full_name=u["full_name"],
+                    email=u["email"],
+                    role=u["role"],
+                    department=u["department"],
+                    patient_id=u["patient_id"],
+                    is_active=True,
+                    created_at=datetime.utcnow()
+                )
+                db.add(user)
+                db.commit()
+            except Exception as e:
+                db.rollback()
+                print(f"[Seed Warning] Skipping user {u.get('username')}: {e}")
 
     # 2. Seed Patients
     for p in PATIENT_SEEDS:
