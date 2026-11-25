@@ -137,13 +137,14 @@ def validate_clinical_document(
     # -------------------------------------------------------------
     # Check 5: Unsupported Statements / Hallucination Guard
     # -------------------------------------------------------------
-    # Verify that medications mentioned in content actually exist in Pharmacy records
+    # Verify that medications mentioned in content actually exist in Pharmacy or documented Allergy records
     pharm_meds = [p["medicine_name"].lower() for p in records.get("pharmacy_records", [])]
+    allergy_text = (patient.allergies or "").lower() if patient else ""
     common_meds_in_text = re.findall(r'(?i)\b(Metformin|Lisinopril|Atorvastatin|Amlodipine|Amoxicillin|Omeprazole|Albuterol|Gabapentin|Levothyroxine|Losartan|Paracetamol|Ibuprofen|Aspirin|Ciprofloxacin)\b', content)
     unsupported_meds = []
     for med in common_meds_in_text:
         med_l = med.lower()
-        if not any(med_l in pm for pm in pharm_meds):
+        if not any(med_l in pm for pm in pharm_meds) and med_l not in allergy_text:
             unsupported_meds.append(med)
 
     if unsupported_meds:
@@ -187,6 +188,14 @@ def validate_clinical_document(
         required_sections = ["Discharge", "Condition", "Medication"]
     elif doc_type == "Laboratory Summary":
         required_sections = ["Laboratory", "Results", "Reference"]
+    elif doc_type == "Patient Visit Summary":
+        required_sections = ["Visit Summary", "Vitals", "Prescriptions"]
+    elif doc_type == "Patient Education Summary":
+        required_sections = ["Education", "Medication", "Patient"]
+    elif doc_type == "Medication Explanation":
+        required_sections = ["Pharmacotherapy", "Dosage", "Frequency"]
+    elif doc_type == "Patient Timeline":
+        required_sections = ["Timeline", "Patient", "Status"]
 
     missing_sections = [sec for sec in required_sections if sec.lower() not in content.lower()]
     if missing_sections:

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import type { Patient, ClinicalDocument, ValidationResult } from '../types';
+import { ClinicalReportViewer } from '../components/ClinicalReportViewer';
+import { stripReportMarkdown } from '../utils/formatClinicalReport';
 import {
   Play, CheckCircle2, AlertTriangle, XCircle, FileText,
   Clock, ShieldCheck, Check, Edit3, X, Globe, Share2, Download
@@ -30,8 +32,9 @@ export const AgenticHubPage: React.FC<AgenticHubPageProps> = ({ currentRole }) =
   const canEdit = isDoctor || isParamedic;
 
   const taskOptions = [
-    { id: 'Prepare Discharge Summary', docType: 'Discharge Summary' },
     { id: 'Prepare Clinical / Encounter Summary', docType: 'Clinical Summary' },
+    { id: 'Generate Laboratory Summary', docType: 'Laboratory Summary' },
+    { id: 'Prepare Discharge Summary', docType: 'Discharge Summary' },
     { id: 'Generate Patient Education Summary', docType: 'Patient Education Summary' },
     { id: 'Generate Medication Explanation', docType: 'Medication Explanation' },
     { id: 'Generate Patient Timeline', docType: 'Patient Timeline' }
@@ -93,7 +96,7 @@ export const AgenticHubPage: React.FC<AgenticHubPageProps> = ({ currentRole }) =
       }
 
       setGeneratedDoc(doc);
-      setEditedContent(doc.content);
+      setEditedContent(stripReportMarkdown(doc.content));
       setReviewStatus(doc.validation_status === 'Approved' ? 'APPROVED' : 'REVIEW REQUIRED');
     } catch (err: any) {
       alert('Agent execution failed: ' + err.message);
@@ -140,6 +143,7 @@ export const AgenticHubPage: React.FC<AgenticHubPageProps> = ({ currentRole }) =
         change_summary: isParamedic ? 'Paramedic modified clinical draft before submission.' : 'Physician modified clinical draft before final approval.'
       });
       setGeneratedDoc(res);
+      setEditedContent(stripReportMarkdown(res.content));
       setIsEditing(false);
       alert('Document revisions saved successfully!');
     } catch (err: any) {
@@ -517,19 +521,7 @@ export const AgenticHubPage: React.FC<AgenticHubPageProps> = ({ currentRole }) =
                 </div>
               </div>
             ) : (
-              <div style={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '20px',
-                fontSize: '13.5px',
-                lineHeight: '1.6',
-                color: 'var(--primary-text)',
-                whiteSpace: 'pre-wrap',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                {generatedDoc.content}
-              </div>
+              <ClinicalReportViewer content={generatedDoc.content} />
             )}
 
             {/* Validation Result Box (Exact Format from Page 6 & 21) */}

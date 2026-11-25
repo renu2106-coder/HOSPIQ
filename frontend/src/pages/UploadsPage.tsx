@@ -2,14 +2,31 @@ import React, { useEffect, useState, useRef } from 'react';
 import { UploadedFile } from '../types';
 import { api } from '../services/api';
 import {
-  UploadCloud, FileText, CheckCircle2, AlertTriangle, XCircle,
-  FileSpreadsheet, Eye, RefreshCw, Zap, Check, ShieldCheck
+  UploadCloud, FileText, CheckCircle2, AlertTriangle,
+  Eye, RefreshCw, Zap, ClipboardPaste
 } from 'lucide-react';
+
+const SAMPLE_DIGITALIZED_REPORT = `Patient Name : Mr. Ramesh Naidu
+Age/Gender : 47Y / Male
+Patient Id : 8845120
+Consultant : Dr. Dakshina Murthy D
+Report Date : 25-Nov-2026
+DEPARTMENT OF HAEMATOLOGY & RADIOLOGY
+Haemoglobin : 11.2 gm%
+Platelet Count : 1.32 Lakhs/cumm
+ESR (Erythrocyte Sedimentation Rate) : 44 mm 1st hour
+CRP : 14.5 mg/L
+X-RAY CHEST PA VIEW
+Findings: Mild cardiomegaly with clear costophrenic angles. No active lung parenchymal lesion or bony injury noted.
+Impression: Borderline cardiomegaly; clinical correlation advised.`;
 
 export const UploadsPage: React.FC = () => {
   const [uploads, setUploads] = useState<UploadedFile[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState('Laboratory');
   const [autoSyncOnUpload, setAutoSyncOnUpload] = useState(true);
+  const [ingestMode, setIngestMode] = useState<'file' | 'text'>('file');
+  const [rawReportText, setRawReportText] = useState('');
+  const [reportLabel, setReportLabel] = useState('Hospital_Digital_Report.txt');
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
@@ -38,7 +55,7 @@ export const UploadsPage: React.FC = () => {
       const result = await api.uploads.uploadFile(file, selectedDepartment, autoSyncOnUpload);
       setStatusMessage({
         type: 'success',
-        text: `"${file.name}" uploaded, normalized, and ${autoSyncOnUpload ? 'automatically synchronized to hospital database' : 'parsed'}!`
+        text: `"${file.name}" normalized and synced (${result.record_count} record(s)${result.patient_id_matched ? ` • Matched Patient: ${result.patient_id_matched}` : ''}).`
       });
       await loadUploads();
       inspectFile(result);
@@ -46,6 +63,36 @@ export const UploadsPage: React.FC = () => {
       setStatusMessage({
         type: 'error',
         text: err.message || 'Upload failed.'
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleIngestText = async () => {
+    if (!rawReportText.trim()) return;
+    setUploading(true);
+    setStatusMessage(null);
+    try {
+      const res = await api.uploads.ingestText({
+        text: rawReportText,
+        department: selectedDepartment,
+        filename: reportLabel.trim() || 'Digitalized_Report.txt'
+      });
+      setStatusMessage({
+        type: 'success',
+        text: `Automated Sync Complete! Extracted ${res.sync_summary.records_ingested} clinical record(s) across ${res.sync_summary.departments_affected.join(', ')} for Patient ${res.matched_patient_id}. Ready in AI Workflow Hub!`
+      });
+      setRawReportText('');
+      await loadUploads();
+      if (res.uploaded_file_id) {
+        const latest = (await api.uploads.list()).find(u => u.id === res.uploaded_file_id);
+        if (latest) inspectFile(latest);
+      }
+    } catch (err: any) {
+      setStatusMessage({
+        type: 'error',
+        text: err.message || 'Failed to parse digitalized report text.'
       });
     } finally {
       setUploading(false);
@@ -67,7 +114,7 @@ export const UploadsPage: React.FC = () => {
       const res = await api.uploads.autoSyncFile(fileId);
       setStatusMessage({
         type: 'success',
-        text: `Automated sync completed! Ingested ${res.records_ingested} record(s) across ${res.departments_affected?.join(', ')}.`
+        text: `Automated sync completed! Ingested ${res.records_ingested} record(s) across ${res.departments_affected?.join(', ') || 'General'}.`
       });
       await loadUploads();
       if (selectedFilePreview?.id === fileId) {
@@ -118,10 +165,12 @@ export const UploadsPage: React.FC = () => {
     const e = ext.toLowerCase();
     if (['csv', 'xlsx', 'xls', 'json'].includes(e)) {
       return <span className="badge badge-info">{ext.toUpperCase()}</span>;
+    } else if (e === 'zip') {
+      return <span className="badge badge-info">ZIP BUNDLE</span>;
     } else if (['jpg', 'jpeg', 'png', 'tiff', 'webp'].includes(e)) {
       return <span className="badge badge-warning">IMAGE (OCR)</span>;
     } else if (['pdf', 'txt'].includes(e)) {
-      return <span className="badge badge-success">PDF NORMALIZED</span>;
+      return <span className="badge badge-success">{e === 'pdf' ? 'PDF NORMALIZED' : 'TEXT / OCR'}</span>;
     }
     return <span className="badge badge-neutral">{ext.toUpperCase()}</span>;
   };
@@ -137,10 +186,10 @@ export const UploadsPage: React.FC = () => {
       }}>
         <div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--primary-navy)' }}>
-            Hospital Database Ingestion & Automated Synchronization
+            Hospital Database Ingestion &amp; Automated Synchronization
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--secondary-text)', marginTop: '2px' }}>
-            Upload department records (PDF, CSV, Excel, JSON). Normalized into text and automatically ingested into database.
+            Upload hospital reports (PDF, ZIP, CSV, Excel, JSON, Images) or paste digitalized text to auto-update patient records and clinical alerts.
           </p>
         </div>
 
@@ -157,7 +206,7 @@ export const UploadsPage: React.FC = () => {
           }}
         >
           <Zap size={16} />
-          <span>{syncingAll ? 'Reconciling System...' : '⚡ Full Automated Database Sync'}</span>
+          <span>{syncingAll ? 'Reconciling System...' : 'Full Automated Database Sync'}</span>
         </button>
       </div>
 
@@ -179,28 +228,42 @@ export const UploadsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Upload & Automation Settings Card */}
+      {/* Upload & Digitalized Text Automation Card */}
       <div className="card" style={{ marginBottom: '20px', backgroundColor: '#FBFCFE' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <div>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--primary-navy)' }}>
-              Upload Department File
-            </h3>
-            <span style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
-              PDF documents are automatically converted into normalized text and mapped to clinical records.
-            </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => setIngestMode('file')}
+              className={ingestMode === 'file' ? 'btn-primary' : 'btn-secondary'}
+              style={{ padding: '7px 14px', fontSize: '12.5px' }}
+            >
+              <UploadCloud size={15} />
+              <span>Upload Report File</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIngestMode('text')}
+              className={ingestMode === 'text' ? 'btn-primary' : 'btn-secondary'}
+              style={{ padding: '7px 14px', fontSize: '12.5px' }}
+            >
+              <ClipboardPaste size={15} />
+              <span>Paste Digitalized Report Text</span>
+            </button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'var(--primary-navy)', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={autoSyncOnUpload}
-                onChange={(e) => setAutoSyncOnUpload(e.target.checked)}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-              />
-              <span>Auto-Sync to Database</span>
-            </label>
+            {ingestMode === 'file' && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'var(--primary-navy)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={autoSyncOnUpload}
+                  onChange={(e) => setAutoSyncOnUpload(e.target.checked)}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                <span>Auto-Sync to Database</span>
+              </label>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary-text)' }}>
@@ -225,60 +288,116 @@ export const UploadsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Drop Zone */}
-        <div
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          style={{
-            border: `2px dashed ${isDragging ? 'var(--primary-teal)' : 'var(--border)'}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '30px 20px',
-            textAlign: 'center',
-            backgroundColor: isDragging ? '#F0F9F8' : '#FFFFFF',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease-in-out'
-          }}
-        >
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) {
-                handleFileUpload(e.target.files[0]);
-              }
+        {ingestMode === 'file' ? (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              border: `2px dashed ${isDragging ? 'var(--primary-teal)' : 'var(--border)'}`,
+              borderRadius: 'var(--radius-md)',
+              padding: '30px 20px',
+              textAlign: 'center',
+              backgroundColor: isDragging ? '#F0F9F8' : '#FFFFFF',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease-in-out'
             }}
-            style={{ display: 'none' }}
-          />
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  handleFileUpload(e.target.files[0]);
+                }
+              }}
+              style={{ display: 'none' }}
+            />
 
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
-            backgroundColor: '#EBF5F4',
-            color: 'var(--primary-teal)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '8px'
-          }}>
-            <UploadCloud size={22} />
-          </div>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              backgroundColor: '#EBF5F4',
+              color: 'var(--primary-teal)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '8px'
+            }}>
+              <UploadCloud size={22} />
+            </div>
 
-          <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--primary-navy)' }}>
-            {uploading ? 'Normalizing Text & Updating Database...' : 'Click to Upload or Drag File Here'}
-          </div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--primary-navy)' }}>
+              {uploading ? 'Normalizing Text & Updating Database...' : 'Click to Upload or Drag Hospital File Here'}
+            </div>
 
-          <div style={{ fontSize: '11.5px', color: 'var(--secondary-text)', marginTop: '4px' }}>
-            Supported: <strong>PDF (Text Normalization), CSV, JSON, Excel (.xlsx, .xls), Images/OCR</strong>
+            <div style={{ fontSize: '11.5px', color: 'var(--secondary-text)', marginTop: '4px' }}>
+              Supported: <strong>PDF, ZIP Archives, CSV, JSON, Excel (.xlsx), Images (JPG/PNG OCR), TXT</strong>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={reportLabel}
+                onChange={(e) => setReportLabel(e.target.value)}
+                placeholder="Source label (e.g. Lab_Order_2026.txt)"
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border)',
+                  fontSize: '12.5px',
+                  width: '280px'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setRawReportText(SAMPLE_DIGITALIZED_REPORT)}
+                className="btn-secondary"
+                style={{ fontSize: '12px', padding: '6px 12px' }}
+              >
+                <FileText size={13} />
+                <span>Load Sample Hospital Report</span>
+              </button>
+            </div>
+
+            <textarea
+              rows={7}
+              value={rawReportText}
+              onChange={(e) => setRawReportText(e.target.value)}
+              placeholder="Paste text copied from any LIMS lab PDF, Radiology X-Ray/MRI viewer, or EMR intake form (Patient Name, UHID/Patient Id, Labs, Findings, Impression)..."
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border)',
+                fontFamily: 'monospace',
+                fontSize: '12.5px',
+                lineHeight: 1.5
+              }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={handleIngestText}
+                disabled={uploading || !rawReportText.trim()}
+                className="btn-primary"
+                style={{ backgroundColor: '#059669', borderColor: '#047857' }}
+              >
+                <Zap size={15} />
+                <span>{uploading ? 'Extracting & Reconciling...' : 'Normalize & Auto-Sync to Database'}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Grid: Upload History & File Inspector */}
       <div style={{ display: 'grid', gridTemplateColumns: selectedFilePreview ? '1.2fr 1fr' : '1fr', gap: '20px' }}>
-        {/* Uploads History Table */}
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--primary-navy)' }}>
@@ -306,7 +425,7 @@ export const UploadsPage: React.FC = () => {
                 {uploads.length === 0 ? (
                   <tr>
                     <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--secondary-text)' }}>
-                      No files uploaded yet. Upload a department PDF or dataset above.
+                      No files uploaded yet. Upload a hospital report or paste digitalized text above.
                     </td>
                   </tr>
                 ) : (

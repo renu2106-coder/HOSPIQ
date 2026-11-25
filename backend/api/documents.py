@@ -11,6 +11,7 @@ from backend.schemas.schemas import (
 )
 from backend.security.auth import get_current_user, require_roles
 from backend.skills.audit_logging_skill import log_audit_event
+from backend.skills.document_generation_skill import strip_markdown_symbols
 from backend.agents.orchestrator_agent import OrchestratorAgent
 
 router = APIRouter(prefix="/api/documents", tags=["AI Documentation"])
@@ -131,7 +132,8 @@ def edit_document(
     current_versions = db.query(DocumentVersion).filter(DocumentVersion.document_id == doc.id).count()
     next_ver = current_versions + 1
 
-    doc.content = payload.content
+    clean_content = strip_markdown_symbols(payload.content)
+    doc.content = clean_content
     doc.validation_status = "Revised"
     doc.updated_at = datetime.utcnow()
 
@@ -139,7 +141,7 @@ def edit_document(
     new_ver = DocumentVersion(
         document_id=doc.id,
         version_number=next_ver,
-        content=payload.content,
+        content=clean_content,
         changed_by_user_id=current_user.id,
         change_summary=payload.change_summary or f"{editor_title} by {current_user.full_name}",
         created_at=datetime.utcnow()

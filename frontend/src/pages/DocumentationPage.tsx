@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ClinicalDocument, ValidationResult, ValidationCheck, DocumentVersion } from '../types';
 import { api } from '../services/api';
+import { ClinicalReportViewer } from '../components/ClinicalReportViewer';
+import { stripReportMarkdown } from '../utils/formatClinicalReport';
 import {
   FileText, Sparkles, CheckCircle2, AlertTriangle, XCircle,
   Clock, Edit3, Check, X, History, ArrowRight, ShieldCheck, Stethoscope
@@ -53,7 +55,7 @@ export const DocumentationPage: React.FC<DocumentationPageProps> = ({ currentRol
     try {
       const doc = await api.documents.get(docId);
       setSelectedDoc(doc);
-      setEditedContent(doc.content);
+      setEditedContent(stripReportMarkdown(doc.content));
       setIsEditing(false);
       setDoctorNotes(doc.doctor_notes || '');
 
@@ -217,9 +219,12 @@ export const DocumentationPage: React.FC<DocumentationPageProps> = ({ currentRol
                 }}
               >
                 <option value="Clinical Summary">Clinical Summary</option>
-                <option value="Patient Visit Summary">Patient Visit Summary</option>
-                <option value="Discharge Summary">Discharge Summary</option>
                 <option value="Laboratory Summary">Laboratory Summary</option>
+                <option value="Discharge Summary">Discharge Summary</option>
+                <option value="Patient Visit Summary">Patient Visit Summary</option>
+                <option value="Patient Education Summary">Patient Education Summary</option>
+                <option value="Medication Explanation">Medication Explanation</option>
+                <option value="Patient Timeline">Patient Timeline</option>
               </select>
             </div>
 
@@ -578,17 +583,7 @@ export const DocumentationPage: React.FC<DocumentationPageProps> = ({ currentRol
                   />
                 </div>
               ) : (
-                <div style={{
-                  padding: '8px',
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '13.5px',
-                  lineHeight: 1.6,
-                  color: 'var(--primary-text)',
-                  whiteSpace: 'pre-wrap'
-                }}>
-                  {selectedDoc.content}
-                </div>
+                <ClinicalReportViewer content={selectedDoc.content} compact />
               )}
             </div>
 

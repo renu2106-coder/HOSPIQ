@@ -8,7 +8,7 @@ from backend.skills.data_normalization_skill import normalize_date
 
 
 def detect_patient_conflicts(db: Session, patient_id: str) -> List[Dict[str, Any]]:
-    """Analyzes cross-department records for discrepancies and conflicts."""
+    """Analyzes cross-department records for discrepancies, critical labs, and urgent radiology findings."""
     clean_id = patient_id.strip().upper()
     conflicts: List[Dict[str, Any]] = []
 
@@ -34,7 +34,7 @@ def detect_patient_conflicts(db: Session, patient_id: str) -> List[Dict[str, Any
                     "conflicting_value": reg.dob
                 })
 
-    # 2. Check Laboratory anomalies and conflicts
+    # 2. Check Laboratory anomalies, blood group mismatches, and abnormal flags
     lab_records = db.query(LaboratoryRecord).filter(LaboratoryRecord.patient_id == clean_id).all()
     for lab in lab_records:
         # Check blood type test conflict with patient profile if present
@@ -67,10 +67,57 @@ def detect_patient_conflicts(db: Session, patient_id: str) -> List[Dict[str, Any
                 "conflicting_value": lab.result_value
             })
 
-    # 3. Check Pharmacy medication consistency
+        # Highlight abnormal lab values requiring clinician review
+        if lab.is_abnormal:
+            conflicts.append({
+                "category": "Abnormal Laboratory Result",
+                "department": "Laboratory",
+                "field": lab.test_name,
+                "patient_id": clean_id,
+                "description": f"Abnormal Lab Finding — {lab.test_name}: '{lab.result_value} {lab.unit or ''}' (Ref: {lab.reference_range or 'N/A'}) from {lab.source_file or 'LIS'}.",
+                "priority": "High",
+                "original_value": lab.reference_range,
+                "conflicting_value": lab.result_value
+            })
+
+    # 3. Check Radiology critical / high-priority findings (respecting negations like 'no acute fracture')
+    rad_records = db.query(RadiologyRecord).filter(RadiologyRecord.patient_id == clean_id).all()
+    for rad in rad_records:
+        combined_rad = f"{rad.report_findings or ''} {rad.impression or ''}".lower()
+        # Mask common radiology negation clauses before pathology matching
+        pos_rad = combined_rad
+        for neg_pat in (
+            "no acute fracture", "no fracture", "no evidence of fracture", "without fracture",
+            "no lytic or sclerotic", "no evidence of lytic", "no evidence of malignancy",
+            "no malignancy", "no hemorrhage", "no bony injury", "within normal limits"
+        ):
+            pos_rad = pos_rad.replace(neg_pat, " [negative] ")
+
+        if any(k in pos_rad for k in ("lytic lesion", "myeloma", "myeloproliferative", "malignancy", "hemorrhage", "fracture", "mass lesion")):
+            conflicts.append({
+                "category": "Critical Radiology Finding",
+                "department": "Radiology",
+                "field": rad.imaging_type,
+                "patient_id": clean_id,
+                "description": f"Urgent Radiology Alert ({rad.imaging_type}): {rad.impression or rad.report_findings}",
+                "priority": "Critical",
+                "original_value": "Normal Diagnostic Baseline",
+                "conflicting_value": rad.impression or rad.report_findings
+            })
+        elif any(k in pos_rad for k in ("thecal sac indentation", "neural foramina", "disc bulge", "narrowed nasal", "turbinates hypertrophy")):
+            conflicts.append({
+                "category": "Significant Radiology Finding",
+                "department": "Radiology",
+                "field": rad.imaging_type,
+                "patient_id": clean_id,
+                "description": f"Significant Imaging Finding ({rad.imaging_type}): {rad.impression or rad.report_findings}",
+                "priority": "High",
+                "original_value": "Normal Baseline",
+                "conflicting_value": rad.impression or rad.report_findings
+            })
+
+    # 4. Check Pharmacy medication consistency
     pharm_records = db.query(PharmacyRecord).filter(PharmacyRecord.patient_id == clean_id).all()
-    med_names = [p.medicine_name.lower() for p in pharm_records]
-    # Check duplicate concurrent medications with different dosages
     seen_meds: Dict[str, PharmacyRecord] = {}
     for p in pharm_records:
         base_name = p.medicine_name.strip().lower()
@@ -90,7 +137,7 @@ def detect_patient_conflicts(db: Session, patient_id: str) -> List[Dict[str, Any
         else:
             seen_meds[base_name] = p
 
-    # 4. Check Allergy vs Medication contraindications if known
+    # 5. Check Allergy vs Medication contraindications if known
     if patient.allergies:
         allergy_text = patient.allergies.lower()
         for p in pharm_records:
@@ -108,4 +155,3 @@ def detect_patient_conflicts(db: Session, patient_id: str) -> List[Dict[str, Any
                 })
 
     return conflicts
-

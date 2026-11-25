@@ -63,11 +63,15 @@ def on_startup():
     db = SessionLocal()
     try:
         from backend.models.models import Patient
+        from backend.synthetic_data.seed_data import seed_real_time_clinical_cases
         if db.query(Patient).count() == 0:
             print("[HOSPIQ Startup] Seeding initial database with synthetic multi-department data...")
             generate_department_files()
             seed_database(db)
             print("[HOSPIQ Startup] Seeding completed.")
+        else:
+            # Ensure real-time hospital diagnostic cases (P016 - P020) are integrated
+            seed_real_time_clinical_cases(db)
     finally:
         db.close()
 

@@ -1,5 +1,6 @@
 import time
 import json
+import secrets
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
@@ -66,16 +67,23 @@ class PatientDataManagementAgent:
 
         conflicts = detect_patient_conflicts(self.db, clean_id)
 
-        # Check existing alerts or create alerts for critical conflicts
-        for conf in conflicts:
+        # Check existing alerts or create alerts for critical conflicts/abnormal findings
+        seen_alert_keys = set()
+        for idx, conf in enumerate(conflicts):
+            alert_key = f"{conf['department']}|{conf['category']}|{conf['description'][:80]}"
+            if alert_key in seen_alert_keys:
+                continue
+            seen_alert_keys.add(alert_key)
+
             existing_alert = self.db.query(DepartmentAlert).filter(
                 DepartmentAlert.patient_id == clean_id,
                 DepartmentAlert.alert_category == conf["category"],
+                DepartmentAlert.description == conf["description"],
                 DepartmentAlert.status == "Open"
             ).first()
             if not existing_alert:
                 alert = DepartmentAlert(
-                    alert_id=f"ALT-{clean_id}-{int(time.time() * 1000) % 100000}",
+                    alert_id=f"ALT-{clean_id}-{idx}-{secrets.token_hex(3).upper()}",
                     patient_id=clean_id,
                     department=conf["department"],
                     alert_category=conf["category"],

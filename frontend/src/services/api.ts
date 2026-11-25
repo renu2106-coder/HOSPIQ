@@ -164,6 +164,22 @@ export const api = {
         body: formData,
       });
     },
+    ingestText: (data: { text: string; department: string; filename?: string }) =>
+      request<{
+        success: boolean;
+        uploaded_file_id: number;
+        matched_patient_id: string | null;
+        normalized_text: string;
+        sync_summary: {
+          records_ingested: number;
+          patients_affected: string[];
+          patients_reconciled: string[];
+          departments_affected: string[];
+        };
+      }>('/uploads/ingest-text', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     autoSyncFile: (fileId: number) =>
       request<any>(`/uploads/${fileId}/auto-sync`, { method: 'POST' }),
     autoSyncAll: () =>

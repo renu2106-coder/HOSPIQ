@@ -566,12 +566,15 @@ def seed_database(db: Session):
             db.add(rec)
         db.commit()
 
-    # 11. Run Patient Data Management Agent to build Unified Records for all 15 patients
+    # 11. Run Patient Data Management Agent to build Unified Records for all 15 baseline patients
     data_agent = PatientDataManagementAgent(db)
     for p in PATIENT_SEEDS:
         data_agent.consolidate_unified_record(p["id"])
 
-    # 12. Initial Audit Log
+    # 12. Seed Real-Time Integrated Patient Cases (P016 - P020)
+    seed_real_time_clinical_cases(db)
+
+    # 13. Initial Audit Log
     init_audit = AuditLog(
         event_id=f"EVT-INIT-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
         user_id=1,
@@ -580,12 +583,340 @@ def seed_database(db: Session):
         entity_type="System",
         entity_id="HOSPIQ_CORE",
         status="SUCCESS",
-        details_json='{"message": "Synthetic hospital dataset seeded across 8 departments for 15 patients."}',
+        details_json='{"message": "Synthetic and real-time clinical dataset seeded across 8 departments for 20 patients."}',
         ip_address="127.0.0.1",
         timestamp=datetime.utcnow()
     )
     db.add(init_audit)
     db.commit()
+
+
+def seed_real_time_clinical_cases(db: Session):
+    """Idempotently integrates the 5 real-time hospital diagnostic cases (P016 - P020) with full 8-department records."""
+    real_cases = [
+        # P016: MD Meharunnihabugum (Prathima Relief MRI Cervical & Whole Spine + CBP/ESR/CRP PDF)
+        {
+            "patient": {
+                "id": "P016", "first_name": "MD", "last_name": "Meharunnihabugum", "full_name": "MD Meharunnihabugum",
+                "dob": "1985-05-15", "age": 41, "gender": "Female", "contact_phone": "+91-98480-14876",
+                "email": "meharunnihabugum@patient.hospiq.local",
+                "address": "UHID: 26014876 | OP: OP2611030190 | Warangal, Telangana",
+                "blood_group": "O+", "emergency_contact": "Family Guardian +91-98480-14877",
+                "allergies": "No known drug allergies",
+                "chronic_conditions": "Cervical & Lumbar Disc Bulge, Neural Foraminal Narrowing, Elevated Inflammatory Marker (ESR)",
+                "registration_date": "2026-11-24"
+            },
+            "reg": {
+                "name": "MD Meharunnihabugum", "dob": "1985-05-15", "gender": "Female",
+                "registration_date": "2026-11-24",
+                "raw_data_json": json.dumps({"department": "Orthopaedics", "uhid": "26014876", "op_no": "OP2611030190"}),
+                "contact_number": "+91-98480-14876",
+                "address": "Prathima Relief Institute of Medical Sciences, Warangal (UHID: 26014876)",
+                "source_file": "Prathima_Relief_MRI_Lab_Report_P016.pdf"
+            },
+            "labs": [
+                {"test_name": "Haemoglobin", "test_code": "HGB", "result_value": "11.8", "unit": "gm%", "reference_range": "11.5 - 16.0 (Female)", "is_abnormal": False, "report_date": "2026-11-24", "lab_department": "Haematology", "ordering_physician": "Dr. Mythilee Vadlamudi", "source_file": "Prathima_Relief_Lab_CBP_P016.pdf"},
+                {"test_name": "Total RBC Count", "test_code": "RBC", "result_value": "4.80", "unit": "Millions/cumm", "reference_range": "4.0 - 5.0", "is_abnormal": False, "report_date": "2026-11-24", "lab_department": "Haematology", "ordering_physician": "Dr. Mythilee Vadlamudi", "source_file": "Prathima_Relief_Lab_CBP_P016.pdf"},
+                {"test_name": "Total Leukocyte Count (WBC)", "test_code": "WBC", "result_value": "7600", "unit": "/cumm", "reference_range": "4,000 - 11,000", "is_abnormal": False, "report_date": "2026-11-24", "lab_department": "Haematology", "ordering_physician": "Dr. Mythilee Vadlamudi", "source_file": "Prathima_Relief_Lab_CBP_P016.pdf"},
+                {"test_name": "Platelet Count", "test_code": "PLT", "result_value": "3.63", "unit": "Lakhs/cumm", "reference_range": "1.4 - 4.5 Lakhs/cumm", "is_abnormal": False, "report_date": "2026-11-24", "lab_department": "Haematology", "ordering_physician": "Dr. Mythilee Vadlamudi", "source_file": "Prathima_Relief_Lab_CBP_P016.pdf"},
+                {"test_name": "Neutrophils / Lymphocytes", "test_code": "DIFF", "result_value": "64% / 29% (Normocytic RBC)", "unit": "%", "reference_range": "N:35-75% / L:20-40%", "is_abnormal": False, "report_date": "2026-11-24", "lab_department": "Haematology", "ordering_physician": "Dr. Mythilee Vadlamudi", "source_file": "Prathima_Relief_Lab_CBP_P016.pdf"},
+                {"test_name": "ESR (Erythrocyte Sedimentation Rate)", "test_code": "ESR", "result_value": "52", "unit": "mm 1st hour", "reference_range": "0 - 20", "is_abnormal": True, "report_date": "2026-11-24", "lab_department": "Haematology / Pathology", "ordering_physician": "Dr. Mythilee Vadlamudi", "source_file": "Prathima_Relief_Lab_ESR_P016.pdf"},
+                {"test_name": "C-Reactive Protein (CRP)", "test_code": "CRP", "result_value": "4.5", "unit": "mg/L", "reference_range": "Up to 10 mg/L", "is_abnormal": False, "report_date": "2026-11-24", "lab_department": "Microbiology / Serology", "ordering_physician": "Dr. Mythilee Vadlamudi", "source_file": "Prathima_Relief_Lab_CRP_P016.pdf"},
+            ],
+            "rads": [
+                {
+                    "imaging_type": "MRI Cervical Spine with Whole Spine Screening",
+                    "body_part": "Cervical & Whole Spine",
+                    "report_findings": "Straightening of cervical spine. Central disc bulges at C4-C5 & C5-C6 causing thecal sac indentation. Right lateral disc bulge at C6-C7 causing thecal sac indentation and narrowing of right neural foramina. Whole sagittal spine screening: Disc bulges noted at L4-L5 & L5-S1 causing thecal sac indentation; Haemangioma at L5. Spinal cord shows normal caliber and signal intensity.",
+                    "impression": "1) Central disc bulges at C4-C5 & C5-C6 causing thecal sac indentation. 2) Right lateral disc bulge at C6-C7 causing thecal sac indentation and narrowing of right neural foramina. 3) L4-L5 & L5-S1 disc bulges and benign L5 vertebral haemangioma.",
+                    "report_date": "2026-11-24",
+                    "radiologist_name": "Dr. T. Ramesh MD.DMRD / Dr. P. Keerthi Bharathi MD.RD",
+                    "source_file": "Prathima_Relief_MRI_Spine_P016.pdf"
+                }
+            ],
+            "nursing": [
+                {"vital_bp": "126/82", "vital_pulse": 78, "vital_temp": 98.4, "vital_resp_rate": 16, "vital_spo2": 99, "nurse_notes": "Patient reports neck stiffness radiating to right upper limb and lower back discomfort; advised cervical collar & physiotherapy review.", "recorded_at": "2026-11-24", "nurse_name": "Nurse Deepika, RN", "source_file": "Ortho_Triage_P016.csv"}
+            ],
+            "meds": [
+                {"medicine_name": "Pregabalin", "strength": "75 mg", "dosage": "1 capsule", "frequency": "Once nightly", "duration": "14 days", "prescription_date": "2026-11-24", "prescribing_doctor": "Dr. Mythilee Vadlamudi", "status": "Active", "source_file": "Prathima_Ortho_Rx.xlsx"},
+                {"medicine_name": "Methylcobalamin", "strength": "1500 mcg", "dosage": "1 tablet", "frequency": "Once daily", "duration": "30 days", "prescription_date": "2026-11-24", "prescribing_doctor": "Dr. Mythilee Vadlamudi", "status": "Active", "source_file": "Prathima_Ortho_Rx.xlsx"},
+                {"medicine_name": "Etoricoxib", "strength": "90 mg", "dosage": "1 tablet", "frequency": "Once daily after food", "duration": "5 days", "prescription_date": "2026-11-24", "prescribing_doctor": "Dr. Mythilee Vadlamudi", "status": "Active", "source_file": "Prathima_Ortho_Rx.xlsx"},
+            ],
+            "appts": [
+                {"appointment_date": "2026-11-24", "appointment_time": "04:30 PM", "department": "Orthopaedics", "doctor": "Dr. Mythilee Vadlamudi", "reason_for_visit": "MRI Spine, CBP, ESR, CRP evaluation for cervical radiculopathy & low back pain", "appointment_status": "Completed", "source_file": "Prathima_OPD.csv"}
+            ],
+            "inpatient": [
+                {"admission_date": "2026-11-24", "discharge_date": "2026-11-24", "ward": "Orthopaedics Daycare Unit", "bed_number": "DC-04", "admission_diagnosis": "Cervical spondylotic radiculopathy (C4-C7 disc bulges) with L4-S1 disc bulge", "discharge_diagnosis": "Multi-level cervical (C4-C7) & lumbar (L4-S1) disc disease, conservative neuro-rehab initiated", "attending_physician": "Dr. Mythilee Vadlamudi", "discharge_status": "Discharged Home — Physiotherapy & Ortho Follow-up", "source_file": "Prathima_ADT.json"}
+            ],
+            "billing": [
+                {"bill_id": "OB26012812", "service": "MRI Cervical + Whole Spine Screening & Haematology Panel (CBP, ESR, CRP)", "amount": 8950.0, "payment_status": "Paid", "billing_date": "2026-11-24", "source_file": "Prathima_Billing.json"}
+            ]
+        },
+
+        # P017: Harish Kanna (Mahesh Clinical Laboratory CBP + Widal + Dengue + Malaria)
+        {
+            "patient": {
+                "id": "P017", "first_name": "Harish", "last_name": "Kanna", "full_name": "Harish Kanna",
+                "dob": "1991-06-10", "age": 35, "gender": "Male", "contact_phone": "+91-94937-34072",
+                "email": "harish.kanna@patient.hospiq.local",
+                "address": "OP Reg No: OP6780019340 | Order: 20261113-282 | Pedanandipadu, Guntur",
+                "blood_group": "B+", "emergency_contact": "Kanna Family +91-94937-34073",
+                "allergies": "No known drug allergies",
+                "chronic_conditions": "Febrile Viral Illness Workup, Mild Thrombocytopenia (Platelets 1.25 Lakhs), Mild Anemia (Hb 12.1 gm%)",
+                "registration_date": "2026-11-13"
+            },
+            "reg": {
+                "name": "Harish Kanna", "dob": "1991-06-10", "gender": "Male",
+                "registration_date": "2026-11-13",
+                "raw_data_json": json.dumps({"department": "Laboratory / Gen Med", "op_reg_no": "OP6780019340", "lab_order": "20261113-282"}),
+                "contact_number": "+91-94937-34072",
+                "address": "Pedanandipadu, Bapatla / Guntur Dist, AP (OP6780019340)",
+                "source_file": "CH.HARISH.zip"
+            },
+            "labs": [
+                {"test_name": "Hemoglobin", "test_code": "HGB", "result_value": "12.1", "unit": "gm%", "reference_range": "Male: 14.0 - 17.5 gm%", "is_abnormal": True, "report_date": "2026-11-13", "lab_department": "Haematology", "ordering_physician": "Self / Gen Med", "source_file": "Mahesh_Lab_HARISH_1.png"},
+                {"test_name": "Platelet Count", "test_code": "PLT", "result_value": "1.25", "unit": "LAKHS/CUMM", "reference_range": "1.50 - 4.50 LAKHS/CUMM", "is_abnormal": True, "report_date": "2026-11-13", "lab_department": "Haematology", "ordering_physician": "Self / Gen Med", "source_file": "Mahesh_Lab_HARISH_1.png"},
+                {"test_name": "Total WBC Count", "test_code": "WBC", "result_value": "4500", "unit": "/cumm", "reference_range": "4,000 - 11,000/cumm", "is_abnormal": False, "report_date": "2026-11-13", "lab_department": "Haematology", "ordering_physician": "Self / Gen Med", "source_file": "Mahesh_Lab_HARISH_1.png"},
+                {"test_name": "RBC Count", "test_code": "RBC", "result_value": "4.50", "unit": "mill/cumm", "reference_range": "4.0 - 6.0 mill/cumm", "is_abnormal": False, "report_date": "2026-11-13", "lab_department": "Haematology", "ordering_physician": "Self / Gen Med", "source_file": "Mahesh_Lab_HARISH_1.png"},
+                {"test_name": "MCH / MCHC", "test_code": "INDICES", "result_value": "26.8 Pg / 30.8 gms%", "unit": "Pg / gms%", "reference_range": "MCH: 27-32 / MCHC: 31-35", "is_abnormal": True, "report_date": "2026-11-13", "lab_department": "Haematology", "ordering_physician": "Self / Gen Med", "source_file": "Mahesh_Lab_HARISH_1.png"},
+                {"test_name": "Malaria Ag P.f/p.v (Smear for MP)", "test_code": "MP-AG", "result_value": "NEGATIVE", "unit": "", "reference_range": "Negative", "is_abnormal": False, "report_date": "2026-11-13", "lab_department": "Immunology", "ordering_physician": "Self / Gen Med", "source_file": "Mahesh_Lab_HARISH_1.png"},
+                {"test_name": "Widal (S. Typhi O & H)", "test_code": "WIDAL", "result_value": "S. Typhi O: 1:80 / H: 1:80 (AH/BH: 1:20)", "unit": "Dilutions", "reference_range": "Borderline (< 1:160)", "is_abnormal": False, "report_date": "2026-11-13", "lab_department": "Immunology", "ordering_physician": "Self / Gen Med", "source_file": "Mahesh_Lab_HARISH_1.png"},
+                {"test_name": "Dengue Serology (NS1 / IgM / IgG)", "test_code": "DENGUE", "result_value": "NS1: NON REACTIVE | IgM: NON REACTIVE | IgG: NON REACTIVE", "unit": "", "reference_range": "Non Reactive", "is_abnormal": False, "report_date": "2026-11-13", "lab_department": "Serology", "ordering_physician": "Self / Gen Med", "source_file": "Mahesh_Lab_HARISH_1.png"},
+            ],
+            "rads": [
+                {"imaging_type": "Ultrasound Abdomen Screening (Baseline)", "body_part": "Abdomen", "report_findings": "Liver, spleen, and gallbladder normal in size and echotexture. No free fluid / ascites noted.", "impression": "Normal abdominal screening; no organomegaly or capillary leak.", "report_date": "2026-11-13", "radiologist_name": "Dr. Sudheer, MD", "source_file": "GenMed_USG_P017.json"}
+            ],
+            "nursing": [
+                {"vital_bp": "116/74", "vital_pulse": 88, "vital_temp": 100.6, "vital_resp_rate": 18, "vital_spo2": 98, "nurse_notes": "Low-grade fever evaluation; platelets slightly low at 1.25 Lakhs/cumm; oral hydration and platelet repeat monitoring in 48 hrs advised.", "recorded_at": "2026-11-13", "nurse_name": "Nurse Clara Barton, RN", "source_file": "OPD_Vitals_P017.csv"}
+            ],
+            "meds": [
+                {"medicine_name": "Paracetamol", "strength": "650 mg", "dosage": "1 tablet", "frequency": "Every 6-8 hours if fever > 100°F", "duration": "5 days", "prescription_date": "2026-11-13", "prescribing_doctor": "Dr. Sarah Smith", "status": "Active", "source_file": "GenMed_Rx_P017.xlsx"},
+                {"medicine_name": "Oral Rehydration Salts (ORS)", "strength": "21.8 g sachet", "dosage": "1 sachet in 1L water", "frequency": "Sip throughout day", "duration": "5 days", "prescription_date": "2026-11-13", "prescribing_doctor": "Dr. Sarah Smith", "status": "Active", "source_file": "GenMed_Rx_P017.xlsx"},
+            ],
+            "appts": [
+                {"appointment_date": "2026-11-13", "appointment_time": "08:30 PM", "department": "General Medicine", "doctor": "Dr. Sarah Smith", "reason_for_visit": "Fever profile follow-up: CBP (Hb 12.1, Platelets 1.25L), Widal 1:80, Dengue/Malaria negative", "appointment_status": "Completed", "source_file": "GenMed_OPD.csv"}
+            ],
+            "inpatient": [],
+            "billing": [
+                {"bill_id": "BILL-20261113-282", "service": "Complete Fever Lab Panel (CBP, Malaria, Widal, Dengue NS1/IgM/IgG)", "amount": 1850.0, "payment_status": "Paid", "billing_date": "2026-11-13", "source_file": "Mahesh_Lab_Bill.json"}
+            ]
+        },
+
+        # P018: Mr. B Krishna Rao (X-Ray PNS - Subtle S-shaped deviation + turbinate hypertrophy)
+        {
+            "patient": {
+                "id": "P018", "first_name": "B Krishna", "last_name": "Rao", "full_name": "B Krishna Rao",
+                "dob": "1988-08-20", "age": 38, "gender": "Male", "contact_phone": "+91-98490-46422",
+                "email": "b.krishnarao@patient.hospiq.local",
+                "address": "Patient ID: 4646422 | Reg: 265120001020 | Dwaraka Nagar, Visakhapatnam, AP",
+                "blood_group": "A+", "emergency_contact": "Rao Family +91-98490-46423",
+                "allergies": "No known drug allergies",
+                "chronic_conditions": "Deviated Nasal Septum (S-Shaped), Bilateral Turbinate Hypertrophy (Right > Left)",
+                "registration_date": "2026-11-24"
+            },
+            "reg": {
+                "name": "B Krishna Rao", "dob": "1988-08-20", "gender": "Male",
+                "registration_date": "2026-11-24",
+                "raw_data_json": json.dumps({"department": "ENT / Radiology", "external_patient_id": "4646422", "reg_id": "265120001020"}),
+                "contact_number": "+91-98490-46422",
+                "address": "Dwaraka Nagar, Visakhapatnam, AP-530016 (Patient ID: 4646422)",
+                "source_file": "DX_PNS_4646422.jpg"
+            },
+            "labs": [
+                {"test_name": "Absolute Eosinophil Count (AEC)", "test_code": "AEC", "result_value": "340", "unit": "cells/cumm", "reference_range": "40 - 440", "is_abnormal": False, "report_date": "2026-11-24", "lab_department": "Haematology", "ordering_physician": "Dr. Dakshina Murthy D", "source_file": "ENT_Lab_P018.json"}
+            ],
+            "rads": [
+                {
+                    "imaging_type": "X-RAY PARANASAL SINUSES (PNS) [DX]",
+                    "body_part": "Paranasal Sinuses (PNS)",
+                    "report_findings": "Nasal septum shows subtle 'S' shaped deviation. Visualized turbinates hypertrophy noted (right > left) with narrowed nasal cavities. Bilateral frontal and ethmoidal sinuses are normal. Bilateral maxillary sinuses are normal. No lytic or sclerotic bony lesions. Soft tissues appear normal.",
+                    "impression": "Subtle S-shaped nasal septal deviation and turbinate hypertrophy (right > left) causing narrowed nasal cavities; paranasal sinuses clear. For clinical correlation and CT if clinically indicated.",
+                    "report_date": "2026-11-24",
+                    "radiologist_name": "Dr. Sudheer (DNB, FRCR, Reg: 84190)",
+                    "source_file": "XRay_PNS_63156855.pdf"
+                }
+            ],
+            "nursing": [
+                {"vital_bp": "122/78", "vital_pulse": 74, "vital_temp": 98.6, "vital_resp_rate": 16, "vital_spo2": 99, "nurse_notes": "Referred by Dr. Dakshina Murthy D for chronic nasal stuffiness and recurrent frontal headache.", "recorded_at": "2026-11-24", "nurse_name": "Nurse Deepika, RN", "source_file": "ENT_Vitals_P018.csv"}
+            ],
+            "meds": [
+                {"medicine_name": "Fluticasone Furoate Nasal Spray", "strength": "27.5 mcg/spray", "dosage": "2 sprays each nostril", "frequency": "Once daily", "duration": "30 days", "prescription_date": "2026-11-24", "prescribing_doctor": "Dr. Dakshina Murthy D", "status": "Active", "source_file": "ENT_Rx_P018.xlsx"},
+                {"medicine_name": "Levocetirizine", "strength": "5 mg", "dosage": "1 tablet", "frequency": "Once nightly", "duration": "10 days", "prescription_date": "2026-11-24", "prescribing_doctor": "Dr. Dakshina Murthy D", "status": "Active", "source_file": "ENT_Rx_P018.xlsx"},
+            ],
+            "appts": [
+                {"appointment_date": "2026-11-24", "appointment_time": "06:30 PM", "department": "ENT (Otorhinolaryngology)", "doctor": "Dr. Dakshina Murthy D", "reason_for_visit": "Nasal obstruction assessment & X-Ray PNS Accn No. 63156855", "appointment_status": "Completed", "source_file": "ENT_OPD.csv"}
+            ],
+            "inpatient": [],
+            "billing": [
+                {"bill_id": "ACCN-63156855", "service": "DX X-Ray Paranasal Sinuses (PNS) & ENT Consultation", "amount": 950.0, "payment_status": "Paid", "billing_date": "2026-11-24", "source_file": "DX_Billing_P018.json"}
+            ]
+        },
+
+        # P019: Ms. Pragya (X-Ray Right Hand PA & Oblique Views - Normal after fall)
+        {
+            "patient": {
+                "id": "P019", "first_name": "Pragya", "last_name": "Ms.", "full_name": "Ms. Pragya",
+                "dob": "2003-04-12", "age": 23, "gender": "Female", "contact_phone": "+91-97010-25795",
+                "email": "pragya.9625795@patient.hospiq.local",
+                "address": "Patient ID: 9625795 | Reg: 260060032652 | Dwaraka Nagar, Visakhapatnam",
+                "blood_group": "O+", "emergency_contact": "Guardian +91-97010-25796",
+                "allergies": "No known drug allergies",
+                "chronic_conditions": "Post-Fall Right Hand Soft Tissue Pain (X-Ray Normal — No Fracture)",
+                "registration_date": "2026-11-24"
+            },
+            "reg": {
+                "name": "Ms. Pragya", "dob": "2003-04-12", "gender": "Female",
+                "registration_date": "2026-11-24",
+                "raw_data_json": json.dumps({"department": "Orthopaedics / Radiology", "external_patient_id": "9625795", "reg_id": "260060032652"}),
+                "contact_number": "+91-97010-25795",
+                "address": "Dwaraka Nagar, Visakhapatnam, AP (Patient ID: 9625795)",
+                "source_file": "DX_RightHand_9625795.pdf"
+            },
+            "labs": [
+                {"test_name": "Serum Calcium (Bone Health Baseline)", "test_code": "CA", "result_value": "9.4", "unit": "mg/dL", "reference_range": "8.5 - 10.5", "is_abnormal": False, "report_date": "2026-11-24", "lab_department": "Biochemistry", "ordering_physician": "Duty Medical Officer", "source_file": "Ortho_Baseline_P019.json"}
+            ],
+            "rads": [
+                {
+                    "imaging_type": "X-RAY RIGHT HAND PA & OBLIQUE VIEWS [DX]",
+                    "body_part": "Right Hand",
+                    "report_findings": "History: Fall and pain. Bone density is normal. Alignment is normal. Joint spaces are normal. Articular margins are normal. No evidence of lytic / sclerotic bone lesions. No bony injury noted. Soft tissues are normal.",
+                    "impression": "Within normal limits (No acute fracture or dislocation detected).",
+                    "report_date": "2026-11-24",
+                    "radiologist_name": "Dr. Sudheer (DNB, FRCR)",
+                    "source_file": "XRay_RightHand_63158383.pdf"
+                }
+            ],
+            "nursing": [
+                {"vital_bp": "112/72", "vital_pulse": 76, "vital_temp": 98.4, "vital_resp_rate": 16, "vital_spo2": 99, "nurse_notes": "Walk-in post minor fall with right hand soreness; ice pack applied, zero visible deformity, intact neurovascular status.", "recorded_at": "2026-11-24", "nurse_name": "Nurse Clara Barton, RN", "source_file": "ER_Vitals_P019.csv"}
+            ],
+            "meds": [
+                {"medicine_name": "Diclofenac Diethylamine Gel", "strength": "1.16% Topical", "dosage": "Apply thinly to painful area", "frequency": "Twice daily", "duration": "7 days", "prescription_date": "2026-11-24", "prescribing_doctor": "Dr. Sarah Smith", "status": "Active", "source_file": "Ortho_Rx_P019.xlsx"},
+                {"medicine_name": "Paracetamol", "strength": "500 mg", "dosage": "1 tablet", "frequency": "As needed for pain (max 3/day)", "duration": "3 days", "prescription_date": "2026-11-24", "prescribing_doctor": "Dr. Sarah Smith", "status": "Active", "source_file": "Ortho_Rx_P019.xlsx"},
+            ],
+            "appts": [
+                {"appointment_date": "2026-11-24", "appointment_time": "08:40 PM", "department": "Orthopaedics / Diagnostic DX", "doctor": "Self-Referred / Duty Ortho", "reason_for_visit": "Right hand fall injury screening — X-Ray Right Hand PA & Oblique Accn No. 63158383", "appointment_status": "Completed", "source_file": "Ortho_OPD.csv"}
+            ],
+            "inpatient": [],
+            "billing": [
+                {"bill_id": "ACCN-63158383", "service": "DX X-Ray Right Hand (PA & Oblique Views)", "amount": 600.0, "payment_status": "Paid", "billing_date": "2026-11-24", "source_file": "DX_Billing_P019.json"}
+            ]
+        },
+
+        # P020: Patient 9624735 (Port Trust - Skull Lateral View: Multiple tiny parietal lytic lesions -> consider myeloma)
+        {
+            "patient": {
+                "id": "P020", "first_name": "Port Trust", "last_name": "Case 9624735", "full_name": "Patient 9624735 (Visakhapatnam Port Trust)",
+                "dob": "1968-01-15", "age": 58, "gender": "Male", "contact_phone": "+91-891-2879624",
+                "email": "case.9624735@patient.hospiq.local",
+                "address": "Patient ID: 9624735 | Reg: 260060032641 | Ref: Visakhapatnam Port Trust - Port Service",
+                "blood_group": "O+", "emergency_contact": "Port Trust Medical Desk +91-891-2879000",
+                "allergies": "No known drug allergies",
+                "chronic_conditions": "Multiple Parietal Lytic Skull Lesions (Suspected Myeloproliferative Disorder / Myeloma Evaluation)",
+                "registration_date": "2026-11-25"
+            },
+            "reg": {
+                "name": "Patient 9624735 (Visakhapatnam Port Trust)", "dob": "1968-01-15", "gender": "Male",
+                "registration_date": "2026-11-25",
+                "raw_data_json": json.dumps({"department": "Haematology / Port Trust Referral", "external_patient_id": "9624735", "reg_id": "260060032641"}),
+                "contact_number": "+91-891-2879624",
+                "address": "Visakhapatnam Port Trust - Port Service, AP (Patient ID: 9624735)",
+                "source_file": "DX_Skull_9624735.pdf"
+            },
+            "labs": [
+                {"test_name": "Hemoglobin", "test_code": "HGB", "result_value": "10.4", "unit": "gm%", "reference_range": "14.0 - 17.5 gm% (Male)", "is_abnormal": True, "report_date": "2026-11-25", "lab_department": "Haematology", "ordering_physician": "Port Trust Medical Officer", "source_file": "PortTrust_Workup_P020.json"},
+                {"test_name": "ESR (Erythrocyte Sedimentation Rate)", "test_code": "ESR", "result_value": "68", "unit": "mm 1st hour", "reference_range": "0 - 20", "is_abnormal": True, "report_date": "2026-11-25", "lab_department": "Haematology", "ordering_physician": "Port Trust Medical Officer", "source_file": "PortTrust_Workup_P020.json"},
+                {"test_name": "Serum Calcium", "test_code": "CA", "result_value": "10.8", "unit": "mg/dL", "reference_range": "8.5 - 10.5", "is_abnormal": True, "report_date": "2026-11-25", "lab_department": "Biochemistry", "ordering_physician": "Port Trust Medical Officer", "source_file": "PortTrust_Workup_P020.json"},
+                {"test_name": "Serum Creatinine", "test_code": "CREAT", "result_value": "1.3", "unit": "mg/dL", "reference_range": "0.6 - 1.3", "is_abnormal": False, "report_date": "2026-11-25", "lab_department": "Biochemistry", "ordering_physician": "Port Trust Medical Officer", "source_file": "PortTrust_Workup_P020.json"},
+            ],
+            "rads": [
+                {
+                    "imaging_type": "X-RAY SKULL LATERAL & AP VIEWS [DX]",
+                    "body_part": "Skull (Parietal Bone / Sella)",
+                    "report_findings": "History: Fall. Multiple tiny lytic lesions noted in parietal bone. Sella size, contour, floor of the sella, anterior & posterior clinoid processes are normal. No evidence of raised intracranial tension. No evidence of abnormal calcification. No evidence of bony injury noted.",
+                    "impression": "Multiple tiny lytic lesions noted in parietal bone - to consider myeloproliferative disorder such as myeloma. Advise serum electrophoresis for further evaluation. Advise CT / x-ray lateral view of nasal bone for further evaluation. For clinical correlation.",
+                    "report_date": "2026-11-25",
+                    "radiologist_name": "Dr. Sudheer (DNB, FRCR)",
+                    "source_file": "XRay_Skull_63155053.pdf"
+                }
+            ],
+            "nursing": [
+                {"vital_bp": "134/84", "vital_pulse": 82, "vital_temp": 98.5, "vital_resp_rate": 16, "vital_spo2": 98, "nurse_notes": "Port Trust referral post fall; alert and oriented (GCS 15/15). Urgent Hematology referral flagged for parietal bone lytic lesions.", "recorded_at": "2026-11-25", "nurse_name": "Nurse Clara Barton, RN", "source_file": "Triage_Vitals_P020.csv"}
+            ],
+            "meds": [
+                {"medicine_name": "Paracetamol", "strength": "500 mg", "dosage": "1 tablet", "frequency": "As needed for mild scalp tenderness", "duration": "3 days", "prescription_date": "2026-11-25", "prescribing_doctor": "Dr. Sarah Smith", "status": "Active", "source_file": "Heme_Supportive_P020.xlsx"},
+            ],
+            "appts": [
+                {"appointment_date": "2026-11-25", "appointment_time": "10:30 AM", "department": "Haematology / Internal Medicine", "doctor": "Dr. Sarah Smith", "reason_for_visit": "Urgent workup: skull parietal lytic lesions -> Serum Protein Electrophoresis & CT correlation", "appointment_status": "Scheduled", "source_file": "PortTrust_Referral.csv"}
+            ],
+            "inpatient": [
+                {"admission_date": "2026-11-25", "discharge_date": None, "ward": "Internal Medicine Observation", "bed_number": "OBS-02", "admission_diagnosis": "Parietal skull lytic lesions under evaluation for suspected myeloproliferative disorder / myeloma", "discharge_diagnosis": "Pending Serum Protein Electrophoresis & Hematology Consult", "attending_physician": "Dr. Sarah Smith", "discharge_status": "Under Active Evaluation", "source_file": "Admission_Obs_P020.json"}
+            ],
+            "billing": [
+                {"bill_id": "ACCN-63155053", "service": "DX X-Ray Skull Lateral & AP + Hematology Screening Workup", "amount": 2450.0, "payment_status": "Pending", "billing_date": "2026-11-25", "source_file": "PortTrust_Billing_P020.json"}
+            ]
+        },
+    ]
+
+    data_agent = PatientDataManagementAgent(db)
+    for case in real_cases:
+        p_info = case["patient"]
+        pid = p_info["id"]
+        if not db.query(Patient).filter(Patient.id == pid).first():
+            pat = Patient(
+                id=pid,
+                first_name=p_info["first_name"],
+                last_name=p_info["last_name"],
+                full_name=p_info["full_name"],
+                dob=p_info["dob"],
+                age=p_info["age"],
+                gender=p_info["gender"],
+                contact_phone=p_info["contact_phone"],
+                email=p_info["email"],
+                address=p_info["address"],
+                blood_group=p_info["blood_group"],
+                emergency_contact=p_info["emergency_contact"],
+                allergies=p_info["allergies"],
+                chronic_conditions=p_info["chronic_conditions"],
+                registration_date=p_info["registration_date"],
+                created_at=datetime.utcnow()
+            )
+            db.add(pat)
+            db.flush()
+
+            reg = case["reg"]
+            db.add(RegistrationRecord(patient_id=pid, created_at=datetime.utcnow(), **reg))
+
+            for lab in case["labs"]:
+                db.add(LaboratoryRecord(patient_id=pid, created_at=datetime.utcnow(), **lab))
+
+            for rad in case["rads"]:
+                db.add(RadiologyRecord(patient_id=pid, created_at=datetime.utcnow(), **rad))
+
+            for nurs in case["nursing"]:
+                db.add(NursingRecord(patient_id=pid, created_at=datetime.utcnow(), **nurs))
+
+            for med in case["meds"]:
+                db.add(PharmacyRecord(
+                    patient_id=pid, medicine_name=med["medicine_name"], strength=med["strength"],
+                    dosage=med["dosage"], frequency=med["frequency"], duration=med["duration"],
+                    route="Topical" if "Gel" in med["medicine_name"] else ("Nasal Spray" if "Spray" in med["medicine_name"] else "Oral"),
+                    prescription_date=med["prescription_date"], prescribing_doctor=med["prescribing_doctor"],
+                    status=med["status"], source_file=med["source_file"], created_at=datetime.utcnow()
+                ))
+
+            for appt in case["appts"]:
+                db.add(AppointmentRecord(patient_id=pid, created_at=datetime.utcnow(), **appt))
+
+            for inp in case["inpatient"]:
+                db.add(InpatientRecord(patient_id=pid, created_at=datetime.utcnow(), **inp))
+
+            for bill in case["billing"]:
+                db.add(BillingRecord(patient_id=pid, created_at=datetime.utcnow(), **bill))
+
+            db.commit()
+
+        if not db.query(UnifiedPatientRecord).filter(UnifiedPatientRecord.patient_id == pid).first():
+            data_agent.consolidate_unified_record(pid)
 
 
 if __name__ == "__main__":
